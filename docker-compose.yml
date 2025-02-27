@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  app:
+    build: 
+      context: .
+      target: builder
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "${PORT:-8000}:${PORT:-8000}"
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+      - PORT=${PORT:-8000}
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge 
