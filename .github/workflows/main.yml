@@ -111,18 +111,19 @@ jobs:
           mkdir -p /www/wwwroot/blog-server
           cd /www/wwwroot/blog-server
           
-          # 设置最新的镜像标签
-          echo "TAG=${{ github.sha }}" > .env
-          echo "NODE_ENV=production" >> .env
-          echo "PORT=8000" >> .env
+          # 设置环境变量
+          cat > .env << EOL
+          TAG=${{ github.sha }}
+          NODE_ENV=production
+          PORT=8000
+          DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/blog-server
+          EOL
           
-          # 确保有最新的 docker-compose 文件
-          cat > docker-compose.yml << 'EOL'
-          version: '3.8'
-          
+          # 创建 docker-compose.yml
+          cat > docker-compose.yml << EOL
           services:
             app:
-              image: ${{ secrets.DOCKERHUB_USERNAME }}/blog-server:${TAG}
+              image: ${{ secrets.DOCKER_USERNAME }}/blog-server:${TAG}
               restart: always
               ports:
                 - "${PORT}:${PORT}"
@@ -135,6 +136,9 @@ jobs:
                 timeout: 10s
                 retries: 3
           EOL
+          
+          # 导出环境变量供 docker-compose 使用
+          export $(cat .env | xargs)
           
           # 拉取最新镜像并重启服务
           docker-compose pull
