@@ -41,42 +41,56 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v4
 
     - name: 设置 QEMU
       uses: docker/setup-qemu-action@v3
-
+      
     - name: 设置 Docker Buildx
       uses: docker/setup-buildx-action@v3
-
+      
     - name: 登录到 Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: 提取元数据
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: chenzhihua/blog-server
-        tags: |
-          type=ref,event=branch
-          type=semver,pattern={{version}}
-          type=sha,format=long
-
+    - name: 检查并创建 Docker Hub 仓库
+      run: |
+        # 检查仓库是否存在
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/blog-server)
+        
+        # 如果仓库不存在 (404)，则创建
+        if [ $STATUS -eq 404 ]; then
+          echo "仓库不存在，正在创建..."
+          curl -X POST \
+            https://hub.docker.com/v2/repositories/ \
+            -H "Authorization: Bearer ${{ secrets.DOCKER_PASSWORD }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "namespace": "${{ secrets.DOCKER_USERNAME }}",
+              "name": "blog-server",
+              "description": "博客服务端",
+              "is_private": false
+            }'
+        else
+          echo "仓库已存在，跳过创建步骤"
+        fi
+        
     - name: 构建并推送
       uses: docker/build-push-action@v5
       with:
         context: .
         platforms: linux/amd64,linux/arm64
         push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/blog-server:latest
+          ${{ secrets.DOCKER_USERNAME }}/blog-server:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        target: prod
 
   deploy:
     needs: build-and-push
