@@ -15,8 +15,11 @@ app.get('/', (req, res) => {
     res.json({ message: '欢迎访问 Node.js 服务器！' });
 });
 
-app.listen(port, () => {
-    console.log(`服务器运行在 http://localhost:${port}`);
-});
+// 只在直接运行时启动服务器
+if (require.main === module) {
+    app.listen(port, () => {
+        console.log(`服务器运行在 http://localhost:${port}`);
+    });
+}
 
 module.exports = app;
