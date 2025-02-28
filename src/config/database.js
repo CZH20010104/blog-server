@@ -1,12 +1,5 @@
 const { Sequelize } = require('sequelize');
-const path = require('path');
-
-// 根据 NODE_ENV 加载对应的环境配置文件
-require('dotenv').config({
-    path: path.resolve(process.cwd(), `.env.${process.env.NODE_ENV || 'development'}`)
-});
-
-const isDevelopment = process.env.NODE_ENV === 'development';
+require('dotenv').config();
 
 const sequelize = new Sequelize(
     process.env.DB_NAME || 'blog_db',
