@@ -2,9 +2,11 @@ const request = require('supertest');
 const app = require('../app');
 
 describe('App Tests', () => {
-    test('GET / should return welcome message', async () => {
-        const response = await request(app).get('/');
+
+    test('GET /api/users/getUsers', async () => {
+        const response = await request(app).get('/api/users/getUsers');
         expect(response.statusCode).toBe(200);
-        expect(response.body).toHaveProperty('message', '欢迎访问 Node.js 服务器！');
+        expect(response.body).toHaveProperty('status', 'running');
+        expect(response.body).toHaveProperty('timestamp');
     });
 }); 
