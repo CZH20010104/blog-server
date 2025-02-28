@@ -8,4 +8,4 @@ router.get('/getUsers', userController.getUsers);
 // 创建新用户
 router.post('/createUser', userController.createUser);
 
-module.exports = router;
+module.exports = router; 
