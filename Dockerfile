@@ -1,29 +1,33 @@
-# 基础阶段
-FROM node:20-alpine AS base
+FROM node:18-alpine as base
+
+# 创建应用目录
 WORKDIR /app
-ENV NODE_ENV=production
-EXPOSE ${PORT:-8000}
 
-# 依赖阶段
-FROM base AS deps
+# 复制项目文件
 COPY package*.json ./
-RUN npm ci
 
-# 开发阶段
-FROM deps AS dev
-ENV NODE_ENV=development
-CMD ["npm", "run", "dev"]
-
-# 生产阶段
-FROM base AS prod
-COPY --from=deps /app/node_modules ./node_modules
+# 开发阶段构建
+FROM base as builder
+RUN npm install
 COPY . .
+RUN mkdir -p logs/pm2
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=3s \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-8000}/health || exit 1
+# 生产阶段构建
+FROM base as production
+ENV NODE_ENV=production
+RUN npm install --production
+RUN npm install -g pm2
+COPY . .
+RUN mkdir -p logs/pm2
 
-# 使用非 root 用户运行
-USER node
+# 安全措施
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
+RUN chown -R nodejs:nodejs /app/logs
+USER nodejs
 
-CMD ["npm", "start"]
+# 暴露端口
+EXPOSE 8000
+
+# 启动命令
+CMD ["pm2-runtime", "ecosystem.config.js", "--env", "production"]
