@@ -8,6 +8,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+      - ./logs:/app/logs
     ports:
       - "${PORT:-8000}:${PORT:-8000}"
     depends_on:
